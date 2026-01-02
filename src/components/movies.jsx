@@ -43,8 +43,25 @@ class Movies extends Component {
   };
 
   handleSort = (sortColumn) => {
-    
     this.setState({ sortColumn });
+  };
+
+  getPagedData = () => {
+    const {
+      pageSize,
+      currentPage,
+      selectedGenre,
+      sortColumn,
+      movies: allMovies,
+    } = this.state;
+
+    const filtered =
+      selectedGenre && selectedGenre._id
+        ? allMovies.filter((m) => m.genre._id === selectedGenre._id)
+        : allMovies;
+    const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
+    const movies = paginate(sorted, currentPage, pageSize);
+    return { totalCount: filtered.length, data: movies };
   };
 
   render() {
@@ -54,20 +71,13 @@ class Movies extends Component {
       currentPage,
       selectedGenre,
       sortColumn,
-      movies: allMovies,
     } = this.state;
     if (count === 0) {
       return <p> There are no movies in the database</p>;
     }
 
-    const filtered =
-      selectedGenre && selectedGenre._id
-        ? allMovies.filter((m) => m.genre._id === selectedGenre._id)
-        : allMovies;
+    const { totalCount, data: movies } = this.getPagedData();
 
-    const sorted = _.orderBy(filtered, [sortColumn.path], [sortColumn.order]);
-
-    const movies = paginate(sorted, currentPage, pageSize);
     return (
       <div className="row">
         <div className="col-3">
@@ -82,7 +92,7 @@ class Movies extends Component {
         <div className="col">
           {" "}
           <p>
-            Showing {filtered.length} movies{" "}
+            Showing {totalCount} movies{" "}
             {selectedGenre && selectedGenre.name !== "All Genres"
               ? `in ${selectedGenre.name} movies database`
               : "in the database"}
@@ -96,7 +106,7 @@ class Movies extends Component {
           />
           <Pagination
             pageSize={pageSize}
-            itemsCount={filtered.length}
+            itemsCount={totalCount}
             currentPage={currentPage}
             onPageChange={this.handlePageChange}
           />
